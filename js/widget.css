@@ -1,0 +1,7 @@
+:root {
+    --table-widget-font-size: 14px; /* Default font size */
+  }
+
+  body, html {
+    font-size: var(--table-widget-font-size); /* Use the variable */
+  }
