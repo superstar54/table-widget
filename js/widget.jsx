@@ -5,30 +5,19 @@ import React, { useState, useEffect } from 'react';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import Button from '@mui/material/Button';
 
-function MyTable({ data, columns, pageSize, config, onRowUpdate, onRowClick, onButtonClick, onRowSelectionChange, style }) {
-  const [rows, setRows] = useState(() => {
-    return data.map((r, i) => ({ id: i, ...r }));
-  });
 
-  useEffect(() => {
-    // Add unique `id` to each row if not present
-    if (data[0] && !data[0].id) {
-      data = data.map((r, i) => ({ id: i, ...r }));
+function buildEnhanceColumns(columns, onButtonClick) {
+  return columns.map((col) => {
+    if (col.type === "date" || col.type === "datetime") {
+      return {
+        ...col,
+        valueGetter: (value) => {
+          // Convert the cell value to a Date object
+          return value ? new Date(value) : null;
+        },
+      };
     }
-    setRows(data);
-  }, [data, config]);
 
-  useEffect(() => {
-    // Dynamically update the CSS variable for font size
-    if (style.fontSize) {
-      document.documentElement.style.setProperty(
-        "--table-widget-font-size",
-        style.fontSize
-      );
-    }
-  }, [style.fontSize]);
-
-  const enhancedColumns = columns.map((col) => {
     if (col.dataType === "button") {
       return {
         ...col,
@@ -51,6 +40,7 @@ function MyTable({ data, columns, pageSize, config, onRowUpdate, onRowClick, onB
         editable: false,
       };
     }
+
     if (col.dataType === "link") {
       return {
         ...col,
@@ -58,7 +48,6 @@ function MyTable({ data, columns, pageSize, config, onRowUpdate, onRowClick, onB
         width: 100,
         editable: false,
         renderCell: (params) => {
-          // Extract the link and text from the cell value
           const div = document.createElement("div");
           div.innerHTML = params.value;
 
@@ -77,12 +66,66 @@ function MyTable({ data, columns, pageSize, config, onRowUpdate, onRowClick, onB
       };
     }
 
-    if (col.dataType === "number") {
-      return { ...col, type: "number" };
+    if (col.type === "checkbox") {
+      return {
+        ...col,
+        renderCell: (params) => (
+          <input
+            type="checkbox"
+            checked={params.value}
+            disabled // Prevent interaction in the display state
+          />
+        ),
+        renderEditCell: (params) => (
+          <input
+            type="checkbox"
+            checked={params.value}
+            onChange={(e) => {
+              params.api.setEditCellValue({ id: params.id, field: params.field, value: e.target.checked });
+            }}
+          />
+        ),
+        sortable: false,
+      };
     }
 
     return col;
   });
+}
+
+
+function MyTable({ data, columns, config, onRowUpdate, onRowClick, onButtonClick, onRowSelectionChange, style }) {
+  const [rows, setRows] = useState(() => {
+    return data.map((r, i) => ({ id: i, ...r }));
+  });
+  const [enhancedColumns, setEnhancedColumns] = useState(() => buildEnhanceColumns(columns, onButtonClick));
+  const [columnVisibilityModel, setColumnVisibilityModel] = useState({});
+
+  useEffect(() => {
+    if (data[0] && !data[0].id) {
+      data = data.map((r, i) => ({ id: i, ...r }));
+    }
+    setRows(data);
+  }, [data, columns]);
+
+  useEffect(() => {
+    setEnhancedColumns(buildEnhanceColumns(columns, onButtonClick));
+    const newColumnVisibilityModel = columns.reduce((visibilityModel, col) => {
+      visibilityModel[col.field] = !col.hide; // Set visibility to false if `hide` is true
+      return visibilityModel;
+    }, {});
+    setColumnVisibilityModel(newColumnVisibilityModel);
+  }, [columns]);
+
+  useEffect(() => {
+    // Dynamically update the CSS variable for font size
+    if (style.fontSize) {
+      document.documentElement.style.setProperty(
+        "--table-widget-font-size",
+        style.fontSize
+      );
+    }
+  }, [style.fontSize]);
 
   const handleProcessRowUpdate = (newRow, oldRow) => {
     const updatedRows = rows.map((row) => (row.id === newRow.id ? newRow : row));
@@ -110,6 +153,10 @@ function MyTable({ data, columns, pageSize, config, onRowUpdate, onRowClick, onB
           ...data.initialState,
           pagination: { paginationModel: { pageSize: config.pageSize} },
         }}
+        columnVisibilityModel={columnVisibilityModel}
+        onColumnVisibilityModelChange={(newModel) =>
+          setColumnVisibilityModel(newModel)
+        }
         pageSizeOptions={[5, 10, 25, { value: -1, label: 'All' }]}
         pagination={config.pagination}
         autoPageSize={config.autoPageSize}

@@ -5,6 +5,7 @@ import pathlib
 import pandas as pd
 import anywidget
 import traitlets
+from copy import deepcopy
 
 try:
     __version__ = importlib.metadata.version("table_widget")
@@ -43,7 +44,7 @@ class TableWidget(anywidget.AnyWidget):
 
     def from_data(
         self,
-        data: dict | pd.DataFrame,
+        data: list | pd.DataFrame,
         columns: list = None,
     ):
         if isinstance(data, pd.DataFrame):
@@ -57,6 +58,6 @@ class TableWidget(anywidget.AnyWidget):
             if "id" not in data[0]:
                 data = [{"id": i, **row} for i, row in enumerate(data)]
         self.data = data
-        self.columns = columns
+        self.columns = deepcopy(columns)
         if not self.style:
             self.style = DEFAULT_STYLE
