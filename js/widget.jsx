@@ -5,50 +5,19 @@ import React, { useState, useEffect } from 'react';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import Button from '@mui/material/Button';
 
-function MyTable({ data, columns, config, onRowUpdate, onRowClick, onButtonClick, onRowSelectionChange, style }) {
-  const [rows, setRows] = useState(() => {
-    // if one of the columns is a date or datetime, convert it Date object
-    const dateColumns = columns.filter((col) => col.type === "date" || col.type === "datetime");
-    if (dateColumns.length > 0) {
-      data = data.map((row) => {
-        dateColumns.forEach((col) => {
-          row[col.field] = new Date(row[col.field]);
-        });
-        return row;
-      });
-    }
-    return data.map((r, i) => ({ id: i, ...r }));
-  });
 
-  useEffect(() => {
-    // Add unique `id` to each row if not present
-    if (data[0] && !data[0].id) {
-      data = data.map((r, i) => ({ id: i, ...r }));
+function buildEnhanceColumns(columns, onButtonClick) {
+  return columns.map((col) => {
+    if (col.type === "date" || col.type === "datetime") {
+      return {
+        ...col,
+        valueGetter: (value) => {
+          // Convert the cell value to a Date object
+          return value ? new Date(value) : null;
+        },
+      };
     }
-    // if one of the columns is a date or datetime, convert it Date object
-    const dateColumns = columns.filter((col) => col.type === "date" || col.type === "datetime");
-    if (dateColumns.length > 0) {
-      data = data.map((row) => {
-        dateColumns.forEach((col) => {
-          row[col.field] = new Date(row[col.field]);
-        });
-        return row;
-      });
-    }
-    setRows(data);
-  }, [data, config]);
 
-  useEffect(() => {
-    // Dynamically update the CSS variable for font size
-    if (style.fontSize) {
-      document.documentElement.style.setProperty(
-        "--table-widget-font-size",
-        style.fontSize
-      );
-    }
-  }, [style.fontSize]);
-
-  const enhancedColumns = columns.map((col) => {
     if (col.dataType === "button") {
       return {
         ...col,
@@ -71,6 +40,7 @@ function MyTable({ data, columns, config, onRowUpdate, onRowClick, onButtonClick
         editable: false,
       };
     }
+
     if (col.dataType === "link") {
       return {
         ...col,
@@ -78,7 +48,6 @@ function MyTable({ data, columns, config, onRowUpdate, onRowClick, onButtonClick
         width: 100,
         editable: false,
         renderCell: (params) => {
-          // Extract the link and text from the cell value
           const div = document.createElement("div");
           div.innerHTML = params.value;
 
@@ -99,6 +68,35 @@ function MyTable({ data, columns, config, onRowUpdate, onRowClick, onButtonClick
 
     return col;
   });
+}
+
+
+function MyTable({ data, columns, config, onRowUpdate, onRowClick, onButtonClick, onRowSelectionChange, style }) {
+  const [rows, setRows] = useState(() => {
+    return data.map((r, i) => ({ id: i, ...r }));
+  });
+  const [enhancedColumns, setEnhancedColumns] = useState(() => buildEnhanceColumns(columns, onButtonClick));
+
+  useEffect(() => {
+    if (data[0] && !data[0].id) {
+      data = data.map((r, i) => ({ id: i, ...r }));
+    }
+    setRows(data);
+  }, [data, columns]);
+
+  useEffect(() => {
+    setEnhancedColumns(buildEnhanceColumns(columns, onButtonClick));
+  }, [columns]);
+
+  useEffect(() => {
+    // Dynamically update the CSS variable for font size
+    if (style.fontSize) {
+      document.documentElement.style.setProperty(
+        "--table-widget-font-size",
+        style.fontSize
+      );
+    }
+  }, [style.fontSize]);
 
   // Create the columnVisibilityModel
   const columnVisibilityModel = enhancedColumns.reduce((visibilityModel, col) => {
