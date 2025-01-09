@@ -66,6 +66,29 @@ function buildEnhanceColumns(columns, onButtonClick) {
       };
     }
 
+    if (col.type === "checkbox") {
+      return {
+        ...col,
+        renderCell: (params) => (
+          <input
+            type="checkbox"
+            checked={params.value}
+            disabled // Prevent interaction in the display state
+          />
+        ),
+        renderEditCell: (params) => (
+          <input
+            type="checkbox"
+            checked={params.value}
+            onChange={(e) => {
+              params.api.setEditCellValue({ id: params.id, field: params.field, value: e.target.checked });
+            }}
+          />
+        ),
+        sortable: false,
+      };
+    }
+
     return col;
   });
 }
