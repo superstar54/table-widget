@@ -76,6 +76,7 @@ function MyTable({ data, columns, config, onRowUpdate, onRowClick, onButtonClick
     return data.map((r, i) => ({ id: i, ...r }));
   });
   const [enhancedColumns, setEnhancedColumns] = useState(() => buildEnhanceColumns(columns, onButtonClick));
+  const [columnVisibilityModel, setColumnVisibilityModel] = useState({});
 
   useEffect(() => {
     if (data[0] && !data[0].id) {
@@ -86,6 +87,11 @@ function MyTable({ data, columns, config, onRowUpdate, onRowClick, onButtonClick
 
   useEffect(() => {
     setEnhancedColumns(buildEnhanceColumns(columns, onButtonClick));
+    const newColumnVisibilityModel = columns.reduce((visibilityModel, col) => {
+      visibilityModel[col.field] = !col.hide; // Set visibility to false if `hide` is true
+      return visibilityModel;
+    }, {});
+    setColumnVisibilityModel(newColumnVisibilityModel);
   }, [columns]);
 
   useEffect(() => {
@@ -97,12 +103,6 @@ function MyTable({ data, columns, config, onRowUpdate, onRowClick, onButtonClick
       );
     }
   }, [style.fontSize]);
-
-  // Create the columnVisibilityModel
-  const columnVisibilityModel = enhancedColumns.reduce((visibilityModel, col) => {
-    visibilityModel[col.field] = !col.hide; // Set visibility to false if `hide` is true
-    return visibilityModel;
-  }, {});
 
   const handleProcessRowUpdate = (newRow, oldRow) => {
     const updatedRows = rows.map((row) => (row.id === newRow.id ? newRow : row));
@@ -129,10 +129,11 @@ function MyTable({ data, columns, config, onRowUpdate, onRowClick, onButtonClick
         initialState={{
           ...data.initialState,
           pagination: { paginationModel: { pageSize: config.pageSize} },
-          columns: {
-            columnVisibilityModel: columnVisibilityModel,
-          },
         }}
+        columnVisibilityModel={columnVisibilityModel}
+        onColumnVisibilityModelChange={(newModel) =>
+          setColumnVisibilityModel(newModel)
+        }
         pageSizeOptions={[5, 10, 25, { value: -1, label: 'All' }]}
         pagination={config.pagination}
         autoPageSize={config.autoPageSize}
