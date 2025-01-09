@@ -15,6 +15,17 @@ function MyTable({ data, columns, pageSize, config, onRowUpdate, onRowClick, onB
     if (data[0] && !data[0].id) {
       data = data.map((r, i) => ({ id: i, ...r }));
     }
+    // if one of the columns is a date or datetime, convert it Date object
+    const dateColumns = columns.filter((col) => col.type === "date" || col.type === "datetime");
+    console.log("dateColumns: ", dateColumns);
+    if (dateColumns.length > 0) {
+      data = data.map((row) => {
+        dateColumns.forEach((col) => {
+          row[col.field] = new Date(row[col.field]);
+        });
+        return row;
+      });
+    }
     setRows(data);
   }, [data, config]);
 
@@ -75,10 +86,6 @@ function MyTable({ data, columns, pageSize, config, onRowUpdate, onRowClick, onB
           return params.value;
         },
       };
-    }
-
-    if (col.dataType === "number") {
-      return { ...col, type: "number" };
     }
 
     return col;
