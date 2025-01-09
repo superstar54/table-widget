@@ -91,6 +91,12 @@ function MyTable({ data, columns, pageSize, config, onRowUpdate, onRowClick, onB
     return col;
   });
 
+  // Create the columnVisibilityModel
+  const columnVisibilityModel = enhancedColumns.reduce((visibilityModel, col) => {
+    visibilityModel[col.field] = !col.hide; // Set visibility to false if `hide` is true
+    return visibilityModel;
+  }, {});
+
   const handleProcessRowUpdate = (newRow, oldRow) => {
     const updatedRows = rows.map((row) => (row.id === newRow.id ? newRow : row));
     setRows(updatedRows);
@@ -116,6 +122,9 @@ function MyTable({ data, columns, pageSize, config, onRowUpdate, onRowClick, onB
         initialState={{
           ...data.initialState,
           pagination: { paginationModel: { pageSize: config.pageSize} },
+          columns: {
+            columnVisibilityModel: columnVisibilityModel,
+          },
         }}
         pageSizeOptions={[5, 10, 25, { value: -1, label: 'All' }]}
         pagination={config.pagination}
