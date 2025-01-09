@@ -5,8 +5,18 @@ import React, { useState, useEffect } from 'react';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import Button from '@mui/material/Button';
 
-function MyTable({ data, columns, pageSize, config, onRowUpdate, onRowClick, onButtonClick, onRowSelectionChange, style }) {
+function MyTable({ data, columns, config, onRowUpdate, onRowClick, onButtonClick, onRowSelectionChange, style }) {
   const [rows, setRows] = useState(() => {
+    // if one of the columns is a date or datetime, convert it Date object
+    const dateColumns = columns.filter((col) => col.type === "date" || col.type === "datetime");
+    if (dateColumns.length > 0) {
+      data = data.map((row) => {
+        dateColumns.forEach((col) => {
+          row[col.field] = new Date(row[col.field]);
+        });
+        return row;
+      });
+    }
     return data.map((r, i) => ({ id: i, ...r }));
   });
 
@@ -17,7 +27,6 @@ function MyTable({ data, columns, pageSize, config, onRowUpdate, onRowClick, onB
     }
     // if one of the columns is a date or datetime, convert it Date object
     const dateColumns = columns.filter((col) => col.type === "date" || col.type === "datetime");
-    console.log("dateColumns: ", dateColumns);
     if (dateColumns.length > 0) {
       data = data.map((row) => {
         dateColumns.forEach((col) => {
