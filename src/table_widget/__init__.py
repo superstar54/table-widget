@@ -33,7 +33,9 @@ class TableWidget(anywidget.AnyWidget):
     selectedRows = traitlets.List(traitlets.Int()).tag(
         sync=True
     )  # Support multiple selections
-    selectedRowId = traitlets.Int().tag(sync=True)  # Support single selection
+    selectedRowId = traitlets.Int(default_value=-1).tag(
+        sync=True
+    )  # Support single selection
     clickedButton = traitlets.Dict().tag(sync=True)
     config = traitlets.Dict().tag(sync=True)  # Configurable options for DataGrid
 
